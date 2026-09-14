@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RESTful APID와 HTTP 메서드의 본질
 
-## Getting Started
+## 1. API (시스템 간의 소통 규격)
 
-First, run the development server:
+클라이언트와 서버가 정확한 데이터를 주고받기 위해 합의한 엄격한 계약서로, 데이터 타입이 하나만 달라도 에러를 발생시킵니다.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **예시:** 모바일 앱이 서버에 가격 데이터를 요청할 때 문자가 아닌 숫자를 보내야 하며, 규격이 틀리면 서버는 `400 Bad Request` 에러를 반환합니다.
+
+## 2. RESTful API의 두 원칙
+
+URL 주소는 자원을 나타내는 **명사**(`products`)로만 구성하고, 처리 목적은 HTTP 메서드(동사)에 온전히 위임합니다.
+
+- `GET`: 데이터 열람 — **예시:** `GET /products` (상품 목록을 가져옴)
+- `POST`: 데이터 등록 — **예시:** `POST /products` (새로운 상품을 등록함)
+- `PATCH`: 데이터 일부 수정 (실무 선호) — **예시:** `PATCH /products/1` (1번 상품의 가격만 일부 변경함)
+- `PUT`: 데이터 전체 덮어씌우기 — **예시:** `PUT /products/1` (1번 상품의 전체 정보를 새 데이터로 덮어씌움)
+- `DELETE`: 데이터 폐기 — **예시:** `DELETE /products/1` (1번 상품을 삭제함)
+
+## 3. JSON (기계들의 공용어)
+
+네트워크 전송 비용을 낮추기 위한 가볍고 순수한 키-값 형태의 텍스트 포맷이며, 큰따옴표와 쉼표 등의 문법을 엄격하게 지켜야 합니다.
+
+- **예시:**
+
+```json
+{
+  "id": 1,
+  "name": "초경량 노트북",
+  "price": 1200000,
+  "inStock": true
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Next.js에서의 역할
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Next.js는 단순한 화면 렌더링 도구를 넘어, Route Handlers(`route.ts`)를 통해 순수한 JSON 데이터를 발행하는 백엔드 API 서버를 직접 구축할 수 있습니다.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **예시:** 프론트엔드 프로젝트 내부에서 별도의 백엔드 서버 구축 없이 직접 `/api/products` 형태의 API 엔드포인트를 만들어 데이터 처리를 수행할 수 있습니다.
