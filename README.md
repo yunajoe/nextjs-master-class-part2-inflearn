@@ -36,3 +36,74 @@ URL 주소는 자원을 나타내는 **명사**(`products`)로만 구성하고, 
 Next.js는 단순한 화면 렌더링 도구를 넘어, Route Handlers(`route.ts`)를 통해 순수한 JSON 데이터를 발행하는 백엔드 API 서버를 직접 구축할 수 있습니다.
 
 - **예시:** 프론트엔드 프로젝트 내부에서 별도의 백엔드 서버 구축 없이 직접 `/api/products` 형태의 API 엔드포인트를 만들어 데이터 처리를 수행할 수 있습니다.
+
+# URL vs URI, Path Variable과 Query String
+
+## 1. URI vs URL 구조 이해
+
+주소창은 단순한 문자열이 아닌 **구조화된 시스템**입니다.
+
+- **URL (Uniform Resource Locator):** 자원이 물리적으로 어디에 있는지 위치를 나타냅니다. (예: `[https://www.mystore.com](https://www.mystore.com)`)
+- **URI (Uniform Resource Identifier):** 주소창 전체를 아우르며 인터넷상의 자원을 정확히 식별합니다.
+
+> **💡 주소창 해부도 예시**
+> `[https://www.mystore.com/api/products/1?category=laptop&sort=price](https://www.mystore.com/api/products/1?category=laptop&sort=price)`
+>
+> - **Scheme:** 통신 규약 (`https`)
+> - **Host:** 물리적 위치 (`[www.mystore.com](https://www.mystore.com)`)
+> - **Path:** 자원의 식별 (`/api/products/1`)
+> - **Query String:** 부가적인 조건 (`?category=laptop&sort=price`)
+
+## 2. 데이터를 싣는 두 가지 핵심 아키텍처
+
+RESTful 설계 철학에 따라 목적에 맞게 구분하여 사용합니다.
+
+- **Path Variable (경로 변수) — 대상 확정 (`What`)**
+- 수많은 데이터 중 **특정 단 하나**를 타겟팅할 때 사용합니다.
+- Next.js 구현: 폴더명을 대괄호로 감싸 표현 (`app/api/products/[id]/route.ts`)
+- 호출 예시: `GET /api/products/1` (1번 상품 조회)
+
+- **Query String (쿼리 스트링) — 조건 부여 (`How`)**
+- 대상을 필터링하거나 정렬하는 등 **가공 옵션**을 줄 때 사용합니다 (`?`로 시작).
+- 호출 예시: `GET /api/products?category=laptop&sort=price`
+
+## 3. NextRequest와 nextUrl을 통한 요청 해독
+
+Next.js는 서버로 들어온 요청을 프레임워크 전용 객체로 안전하게 파싱해 줍니다.
+
+```typescript
+import { NextRequest } from "next/server";
+
+export async function GET(request: NextRequest) {
+  // nextUrl을 통해 복잡한 파싱 없이 쿼리 스트링 추출 가능
+  const searchParams = request.nextUrl.searchParams;
+  const sortOption = searchParams.get("sort"); // 'price' 추출
+}
+```
+
+- **NextRequest:** 표준 Request 객체를 확장한 **요청 명세서** (헤더, 쿠키, 본문 등 포함)
+- **nextUrl:** URL을 미리 분해해 둔 속성으로, `.searchParams.get()` 등을 통해 안전하게 값을 추출할 수 있습니다.
+
+## 4. NextResponse를 활용한 응답 통제
+
+서버의 처리 결과를 클라이언트에 전달할 때는 **NextResponse**를 사용합니다.
+
+```typescript
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(request: NextRequest) {
+  const responseData = { message: "데이터 등록 성공" };
+
+  return NextResponse.json(responseData, {
+    status: 201, // 엄격한 상태 코드 제어 (Created)
+    headers: {
+      "Content-Type": "application/json",
+      "X-System-Arch": "MasterClass", // 시스템 추적을 위한 커스텀 헤더
+    },
+  });
+}
+```
+
+- **NextResponse.json:** JSON 데이터 규격 포장, 쿠키 제어, 리다이렉트 등 응답을 통제합니다.
+- **Status Code (예: 201 Created):** 단순 성공(200)을 넘어 데이터가 성공적으로 생성되었음을 명확히 알립니다.
+- **Custom Headers (`X-`):** 대규모 서비스 환경에서 시스템 추적(Tracing) 및 모니터링을 위해 활용하는 고급 통제 기술입니다.
