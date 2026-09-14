@@ -19,6 +19,20 @@ export default function Home() {
         >
           GET: 전체 상품 데이터 타격 테스트
         </a>
+        <a
+          href="/api/agents"
+          target="_blank"
+          style={{
+            padding: "12px 24px",
+            background: "#38bdf8",
+            color: "#000",
+            borderRadius: "6px",
+            textDecoration: "none",
+            fontWeight: "bold",
+          }}
+        >
+          GET: 전체 AGENTS 데이터 타격 테스트
+        </a>
       </div>
       <p style={{ marginTop: "20px", color: "#94a3b8", fontSize: "14px" }}>
         ※ POST 요청 및 방어선 검증은 <b>Postman</b>을 사용하십시오.
