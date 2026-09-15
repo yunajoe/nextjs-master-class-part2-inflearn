@@ -2,7 +2,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "시스템 통제 센터",
-  description: "Next.js 15 API 파이프라인 실습",
+  description: "Next.js 풀스택 API 파이프라인 실습",
 };
 
 export default function RootLayout({

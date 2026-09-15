@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div style={{ padding: "40px" }}>
@@ -33,6 +35,19 @@ export default function Home() {
         >
           GET: 전체 AGENTS 데이터 타격 테스트
         </a>
+
+        {/* 동적 라우트로 이동하는 테스트 버튼 */}
+        <Link href="/products/777">
+          <button
+            style={{
+              padding: "10px 20px",
+              marginTop: "10px",
+              cursor: "pointer",
+            }}
+          >
+            777번 상품 데이터 타격 테스트
+          </button>
+        </Link>
       </div>
       <p style={{ marginTop: "20px", color: "#94a3b8", fontSize: "14px" }}>
         ※ POST 요청 및 방어선 검증은 <b>Postman</b>을 사용하십시오.
