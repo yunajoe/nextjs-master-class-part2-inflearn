@@ -48,6 +48,17 @@ export default function Home() {
             777번 상품 데이터 타격 테스트
           </button>
         </Link>
+        <Link href="/instances/AZ-999">
+          <button
+            style={{
+              padding: "10px 20px",
+              marginTop: "10px",
+              cursor: "pointer",
+            }}
+          >
+            실습 상품 상세 테스트
+          </button>
+        </Link>
       </div>
       <p style={{ marginTop: "20px", color: "#94a3b8", fontSize: "14px" }}>
         ※ POST 요청 및 방어선 검증은 <b>Postman</b>을 사용하십시오.
