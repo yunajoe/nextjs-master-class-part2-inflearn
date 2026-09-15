@@ -107,3 +107,114 @@ export async function POST(request: NextRequest) {
 - **NextResponse.json:** JSON 데이터 규격 포장, 쿠키 제어, 리다이렉트 등 응답을 통제합니다.
 - **Status Code (예: 201 Created):** 단순 성공(200)을 넘어 데이터가 성공적으로 생성되었음을 명확히 알립니다.
 - **Custom Headers (`X-`):** 대규모 서비스 환경에서 시스템 추적(Tracing) 및 모니터링을 위해 활용하는 고급 통제 기술입니다.
+
+# Next.js 풀스택 데이터 파이프라인 실습 가이드
+
+## 1. 프로젝트 폴더 구조
+
+프론트엔드 UI와 백엔드 API, 최상단 레이아웃이 정확한 위치에 연결되어야 시스템이 정상 작동합니다.
+
+```text
+src/
+└── app/
+    ├── layout.tsx               <-- 앱의 최상위 HTML 뼈대
+    ├── page.tsx                 <-- 메인 진입점 화면
+    ├── api/
+    │   └── products/
+    │       └── [id]/            <-- 동적 API 경로
+    │           └── route.ts     <-- 동적 API 엔드포인트 파일
+    └── products/
+        └── [id]/                <-- 동적 UI 경로
+            └── page.tsx         <-- 프론트엔드 UI 화면 파일
+
+```
+
+## 2. 최상위 뼈대와 진입점 구축 (Root Layout & Page)
+
+- **루트 레이아웃 (`src/app/layout.tsx`)**
+- `metadata`: 브라우저 탭 제목 및 메타 설명 정의
+- `RootLayout`: 모든 하위 페이지(`children`)가 렌더링되는 최상위 부모 컴포넌트 (`<html>`, `<body>` 포함)
+
+- **진입점 화면 (`src/app/page.tsx`)**
+- 사용자가 처음 접속하는 기본 화면 (`localhost:3000`)
+- `Link` 컴포넌트를 통해 `/products/777` 경로로 이동하는 테스트 버튼 제공
+
+## 3. 동적 라우트 핸들러 구축 (Backend API)
+
+특정 상품 정보를 타겟팅하여 반환하는 백엔드 API 엔드포인트(`src/app/api/products/[id]/route.ts`)입니다.
+
+```typescript
+import { NextResponse } from "next/server";
+
+interface ProductDetail {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params; // Next.js 15+ 비동기 파라미터 제어
+
+  const product: ProductDetail = {
+    id,
+    name: `${id}번 상품`,
+    price: 50000,
+    description: "시스템 통제 센터에서 발행한 안전한 데이터입니다.",
+  };
+
+  return NextResponse.json(product);
+}
+```
+
+> **💡 핵심 포인트:** Next.js 15 버전부터는 `params`를 처리할 때 반드시 `await`를 사용하여 비동기로 해독해야 크래시를 방지할 수 있습니다.
+
+## 4. 서버 컴포넌트 데이터 렌더링 (Frontend UI)
+
+API를 호출해 최신 데이터를 확보하고 브라우저 화면을 조립하는 프론트엔드 화면(`src/app/products/[id]/page.tsx`)입니다.
+
+```typescript
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+}
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  // cache: "no-store"를 통해 항상 최신 데이터를 보장
+  const response = await fetch(`http://localhost:3000/api/products/${id}`, {
+    cache: "no-store",
+  });
+
+  const product: Product = await response.json();
+
+  return (
+    <div style={{ padding: "20px", border: "1px solid #ccc", marginTop: "20px" }}>
+      <h1>상품 상세 제어소</h1>
+      <hr />
+      <p><strong>상품 식별자:</strong> {product.name}</p>
+      <p><strong>측정 가치:</strong> {product.price.toLocaleString()}원</p>
+      <p><strong>시스템 로그:</strong> {product.description}</p>
+      <p><small style={{ color: "gray" }}>요청된 타겟 ID: {id}</small></p>
+    </div>
+  );
+}
+
+```
+
+## 5. 시스템 작동 검증 (타격 테스트)
+
+개발 서버(`npm run dev`) 가동 후 다음 두 가지 방식으로 검증을 진행합니다.
+
+- **테스트 1 (풀스택 파이프라인):** `http://localhost:3000` 접속 ➡️ `[777번 상품 데이터 타격 테스트]` 버튼 클릭 ➡️ `/products/777` 경로로 이동 및 상품 데이터 렌더링 확인
+- **테스트 2 (API 직접 타격):** 주소창에 `http://localhost:3000/api/products/999` 입력 ➡️ 화면 없이 순수한 JSON 데이터(`{"id":"999", ...}`) 출력 확인
