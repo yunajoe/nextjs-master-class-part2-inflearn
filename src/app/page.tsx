@@ -74,6 +74,12 @@ export default function Home() {
             세그먼트 캐싱 테스트
           </Link>
         </div>
+        <div style={{ display: "flex", gap: "20px" }}>
+          <Link href="/performances">메모이제이션 테스트2</Link>
+          <Link href="/api/metrics" target="_blank">
+            세그먼트 캐싱 테스트2
+          </Link>
+        </div>
       </div>
       <p style={{ marginTop: "20px", color: "#94a3b8", fontSize: "14px" }}>
         ※ POST 요청 및 방어선 검증은 <b>Postman</b>을 사용하십시오.

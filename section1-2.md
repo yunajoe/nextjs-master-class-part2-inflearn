@@ -188,9 +188,66 @@ const res = await fetch("...", { next: { revalidate: 60 } });
 실무에서는 백엔드 데이터베이스나 외부 서비스와 통신할 때 직접 `fetch`를 호출하기보다, 라이브러리(도구)를 거쳐서 데이터를 가져오는 경우가 많습니다.
 
 - **ORM (예: Prisma)**: 데이터베이스(PostgreSQL, MySQL 등)와 소통할 때 쓰는 도구입니다. `prisma.user.findMany()` 같은 자체 메서드를 사용하므로, 우리가 `fetch` 함수를 쓸 수 없고 그 안에 `next: { revalidate: 60 }` 같은 옵션을 넣을 수도 없습니다.
-- **외부 SDK**: AWS SDK, Firebase SDK, Stripe(결제) SDK 등 서드파티 서비스의 공식 라이브러리를 쓸 때도 마찬가지입니다. 내부적으로 알아서 통신하기 때문에 우리가 직접 `fetch` 옵션을 조작할 수 없습니다.
+- **외부 SDK**: AWS SDK, Firebase SDK, Stripe(결제) SDK 등 서드파티 서비스의 공식
+- 라이브러리를 쓸 때도 마찬가지입니다. 내부적으로 알아서 통신하기 때문에 우리가 직접 `fetch` 옵션을 조작할 수 없습니다.
+- 즉, "내가 직접 `fetch`를 안 쓰니까 개별 `fetch`에 캐시를 걸 수가 없네?"라는 상황이 발생하는 것입니다.
 
-즉, "내가 직접 `fetch`를 안 쓰니까 개별 `fetch`에 캐시를 걸 수가 없네?"라는 상황이 발생하는 것입니다.
+1. 외부 SDK나 라이브러리 내부에서 fetch를 감추고 직접 호출할 때
+
+```javascript
+import { NextResponse } from "next/server";
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+// 파일 상단 방어막 (Stripe SDK 내부 fetch를 직접 제어할 수 없으므로 전체 라우트를 캐싱)
+export const revalidate = 300; // 5분 캐시
+
+export async function GET() {
+  // stripe 내부에서 어떤 방식으로 통신하는지 개발자는 알 수 없고 next 옵션을 줄 수도 없음
+  const balance = await stripe.balance.retrieve();
+
+  return NextResponse.json(balance);
+}
+
+```
+
+2. ORM(Prisma, Drizzle 등)을 사용하여 SQL/DB를 조회할 때
+
+```javascript
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db"; // Prisma 등 ORM
+
+// DB 조회 결과 전체를 1시간 동안 정적으로 캐싱하고 싶을 때
+export const revalidate = 3600;
+
+export async function GET() {
+  // fetch가 아니므로 개별 옵션을 줄 수 없음.
+  // 오직 export const revalidate로만 이 라우트의 캐시를 통제할 수 있습니다.
+  const posts = await db.post.findMany();
+
+  return NextResponse.json(posts);
+}
+```
+
+3. 여러 개의 서로 다른 데이터 소스가 한 라우트에 섞여 있을 때
+
+```javascript
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+
+// 하나라도 fetch가 아닌 것(DB 등)이 섞여 있거나,
+// 여러 소스의 캐시 주기를 일괄적으로 60초로 통제하고 싶을 때 파일 단위로 설정합니다.
+export const revalidate = 60;
+
+export async function GET() {
+  const userInfo = await db.user.findMany(); // ORM (fetch 옵션 불가)
+  const externalRes = await fetch("https://api.example.com/data"); // 일반 fetch
+  const externalData = await externalRes.json();
+
+  return NextResponse.json({ userInfo, externalData });
+}
+```
 
 ### 해결책: 파일 통째로 캐시 방어막 치기 (`export const revalidate = 60`)
 
@@ -235,4 +292,4 @@ export async function GET() {
 
 ### 실습2
 
-![alt text](image-1.png)
+- 1분 이내에 새로고침을 해도 동일한 날짜가 표시됨
