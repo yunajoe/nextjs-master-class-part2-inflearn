@@ -1,5 +1,14 @@
 import Link from "next/link";
 
+const btnStyle = (color: string) => ({
+  padding: "12px 24px",
+  backgroundColor: color,
+  color: "#fff",
+  borderRadius: "6px",
+  textDecoration: "none",
+  fontWeight: "bold" as const,
+});
+
 export default function Home() {
   return (
     <div style={{ padding: "40px" }}>
@@ -59,6 +68,12 @@ export default function Home() {
             실습 상품 상세 테스트
           </button>
         </Link>
+        <div style={{ display: "flex", gap: "20px" }}>
+          <Link href="/performance">메모이제이션 테스트</Link>
+          <Link href="/api/static-github" target="_blank">
+            세그먼트 캐싱 테스트
+          </Link>
+        </div>
       </div>
       <p style={{ marginTop: "20px", color: "#94a3b8", fontSize: "14px" }}>
         ※ POST 요청 및 방어선 검증은 <b>Postman</b>을 사용하십시오.
