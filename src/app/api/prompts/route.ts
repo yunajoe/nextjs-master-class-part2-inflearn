@@ -1,7 +1,6 @@
 import { promptData } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-
 export async function GET() {
   return NextResponse.json(
     {
@@ -11,12 +10,6 @@ export async function GET() {
     { status: 200 },
   );
 }
-
-// ========================================
-// [✨ 새 프롬프트 등록]
-// - 제목: 파이썬 기초 알고리즘 튜터
-// - 내용: 학생이 정답을 바로 알지 못하도록, 일상생활의 비유를 들어 반복문의 원리를 설명하라.
-// 👉 [프롬프트 저장] 버튼 클릭 (POST API 비동기 타격)
 
 export async function POST(request: NextRequest) {
   const payload = await request.json();
@@ -29,7 +22,7 @@ export async function POST(request: NextRequest) {
   }
 
   promptData.push({
-    id: promptData.length + 1
+    id: promptData.length + 1,
     ...payload,
   });
 
