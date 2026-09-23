@@ -24,6 +24,7 @@ export async function POST(request: NextRequest) {
   promptData.push({
     id: promptData.length + 1,
     ...payload,
+    updatedAt: new Date().toLocaleString(),
   });
 
   return NextResponse.json(

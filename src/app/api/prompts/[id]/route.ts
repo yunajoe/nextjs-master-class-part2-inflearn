@@ -34,6 +34,7 @@ export async function PATCH(
       ...targetData,
       title,
       contents,
+      updatedAt: new Date().toLocaleTimeString(),
     };
     promptData.push(newData);
 
