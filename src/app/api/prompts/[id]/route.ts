@@ -40,6 +40,7 @@ export async function PATCH(
     return NextResponse.json(
       {
         success: true,
+        message: "수정되었습니다.",
       },
       { status: 200 },
     );
@@ -57,10 +58,30 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  return NextResponse.json(
-    {
-      success: true,
-    },
-    { status: 200 },
-  );
+  try {
+    const { id } = await params;
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "id가 없습니다.",
+        },
+        { status: 400 },
+      );
+    }
+    return NextResponse.json(
+      {
+        success: true,
+        message: "삭제 되었습니다",
+      },
+      { status: 200 },
+    );
+  } catch {
+    return NextResponse.json(
+      {
+        error: "알 수 없는 에러",
+      },
+      { status: 500 },
+    );
+  }
 }
