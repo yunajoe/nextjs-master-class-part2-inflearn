@@ -1,6 +1,6 @@
 // 브라우저 환경과 달리 Node.js 서버 환경(Next.js 서버)에서는 fetch 요청 시 도메인 정보가 포함된 절대 경로
 
-import { DATA } from "@/app/api/webhooks/reviews/route";
+import { CourseReview } from "@/app/api/webhooks/reviews/route";
 
 async function page() {
   const response = await fetch("http://localhost:3000/api/webhooks/reviews", {
@@ -8,37 +8,68 @@ async function page() {
   });
   const jsonData = await response.json();
   if (!jsonData.success || !jsonData.data) throw new Error("불러오는데 실패");
-  if (jsonData.data.length === 0) return <h1>아직 데이터가 없습니다.</h1>;
+  if (jsonData.data.length === 0)
+    return (
+      <div className="p-8 bg-white rounded-2xl border border-dashed border-slate-300 text-center text-slate-500 shadow-sm">
+        아직 수신된 수강평이 없습니다. Postman으로 웹훅 이벤트를 트리거해
+        보십시오.
+      </div>
+    );
   return (
     <div>
       <h1>👨‍🏫 실시간 수강평 모니터링 대시보드</h1>
-      <h1>시스템 마지막 동기화: </h1>
-      <div>
-        {jsonData.data.map((item: DATA) => (
-          <div key={item.id}>
-            <div className="flex gap-4">
-              <p>{item.rating}</p>
-              <p>{item.courseTitle}</p>
-            </div>
-            <p>
-              {item.comment} - {item.studentName} 수강생{" "}
-            </p>
-          </div>
-        ))}
-      </div>
+      <p className="text-slate-500 mb-8 border-b border-slate-200 pb-4 font-mono text-sm">
+        시스템 마지막 동기화:
+        {new Date(jsonData.updatedAt).toLocaleTimeString()}
+      </p>
+      <ul className="space-y-6">
+        {jsonData.data.map((event: CourseReview, index: number) => {
+          const isPerfect = event.rating === 5;
+          const needsAttention = event.rating <= 3;
+
+          return (
+            <li
+              key={index}
+              className="p-6 bg-white rounded-2xl border border-slate-100 shadow-md"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <div className="text-amber-400 text-xl tracking-widest mb-1">
+                    {"★".repeat(event.rating)}
+                    {"☆".repeat(5 - event.rating)}
+                  </div>
+                  <h2 className="text-lg font-bold text-slate-800">
+                    {event.courseTitle}
+                  </h2>
+                </div>
+                {isPerfect && (
+                  <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs font-black rounded-full">
+                    🌟 만점 리뷰
+                  </span>
+                )}
+                {needsAttention && (
+                  <span className="px-3 py-1 bg-rose-100 text-rose-700 text-xs font-black rounded-full">
+                    ⚠️ 확인 요망
+                  </span>
+                )}
+              </div>
+              <blockquote className="border-l-4 border-blue-500 pl-4 py-1 mb-4">
+                <p className="text-slate-600 italic">"{event.comment}"</p>
+              </blockquote>
+              <div className="flex justify-between items-center text-sm">
+                <span className="font-bold text-slate-700">
+                  👤 {event.studentName} 수강생
+                </span>
+                <span className="text-slate-400 font-mono">
+                  {new Date(event.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
 
 export default page;
-
-// # 2. 강사용 내부 프론트엔드 대시보드 화면 (/dashboard 접속)
-// ========================================
-// 👨‍🏫 실시간 수강평 모니터링 대시보드
-// ========================================
-// 시스템 마지막 동기화: 오후 3:45:12
-// ----------------------------------------
-// ⭐⭐⭐⭐⭐ [5.0] Next.js 마스터 클래스
-// "최고의 강의!" - 김개발 수강생 (오후 3:45:10)
-// 💡 🌟 만점 리뷰 (조건부 UI 뱃지 렌더링)
-// ----------------------------------------
