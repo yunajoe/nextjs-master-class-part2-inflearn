@@ -25,8 +25,18 @@ export async function createProductAction(formData: FormData) {
   console.log(`💾 [DB 저장 완료] 상품명: ${title}, 가격: ${price}원`);
 
   // 4단계: 클라이언트로 반환할 결과 페이로드
-  //   return {
-  //     success: true,
-  //     message: "시스템에 상품이 성공적으로 등록되었습니다.",
-  //   };
+  return {
+    success: true,
+    message: "시스템에 상품이 성공적으로 등록되었습니다.",
+  };
+}
+export async function createDevice(formData: FormData) {
+  const name = formData.get("name") as string;
+  const price = Number(formData.get("price")) as number;
+  console.log("name ===>", name, "price ===>", price);
+  if (!name || !price || price <= 0) {
+    // API 에러 응답 대신, 순수 자바스크립트 에러를 던집니다.
+    throw new Error("상품명과 올바른 가격을 입력해주세요.");
+  }
+  console.log(`💾 [DB 저장 완료] 디바이스명: ${name}, 가격: ${price}원`);
 }

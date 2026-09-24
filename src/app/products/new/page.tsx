@@ -13,9 +13,13 @@ export default function NewProductPage() {
       </p>
       <hr style={{ borderColor: "#eaeaea", margin: "20px 0" }} />
 
-      {/* 2. <form>의 action 속성에 서버 함수를 직접 바인딩 */}
+      {/* 2. <form>의 action 속성에 서버 함수를 직접 바인딩
+      
+      기본적으로 리액트(및 브라우저 HTML)의 form 태그가 지원하는 action 속성은 오직 void 또는 Promise<void>만 반환하도록 타입이 정의
+      */}
+
       <form
-        action={createProductAction}
+        action={createProductAction as any}
         style={{ display: "flex", flexDirection: "column", gap: "15px" }}
       >
         {/* name 속성이 백엔드의 formData.get("키") 와 정확히 일치해야 합니다. */}

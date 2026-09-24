@@ -7,15 +7,16 @@ function page() {
       <h1 className="text-[#0070f3] mt-0 mb-2 text-2xl font-bold">
         새로운 상품 통제소
       </h1>
-
       <p className="text-gray-500 text-sm mb-5">
         Pending UI 방어선이 구축된 폼 시스템
       </p>
-
       <hr className="border-gray-200 my-5" />
-
+      {/* 
+      기본적으로 리액트(및 브라우저 HTML)의 form 태그가 지원하는 action 속성은 오직 void 또는 Promise<void>만 반환하도록 타입이 정의
+      */}
       {/* Server Action이 연결된 부모 폼 */}
-      <form action={createProductAction} className="flex flex-col gap-4">
+      */
+      <form action={createProductAction as any} className="flex flex-col gap-4">
         <input
           type="text"
           name="title"
