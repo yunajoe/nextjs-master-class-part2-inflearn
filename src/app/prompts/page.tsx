@@ -1,19 +1,56 @@
-"use client";
-
-import { PromptsData } from "@/lib/db";
-import { useState } from "react";
+import { Prompt } from "@/lib/db";
+import { useEffect, useState } from "react";
 
 function page() {
-  const [prompts, setPrompts] = useState<PromptsData[]>([]);
+  const [prompts, setPrompts] = useState<Prompt[]>();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [editingId, setEditingId] = useState(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  const handleSubmit = () => {};
+  // 1. [READ] 데이터 호출
+  const fetchPrompts = async () => {
+    const res = await fetch("/api/prompts");
+    const data = await res.json();
+    setPrompts(data);
+  };
 
-  const handleEditClick = (id: number) => {};
+  useEffect(() => {
+    fetchPrompts();
+  }, []);
 
-  const handleDelete = (id: number) => {};
+  // 2. [CREATE & UPDATE] 폼 전송 가로채기
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (editingId) {
+      await fetch(`/api/prompts/${editingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content }),
+      });
+      setEditingId(null);
+    } else {
+      await fetch("/api/prompts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, content }),
+      });
+    }
+    setTitle("");
+    setContent("");
+    fetchPrompts();
+  };
+
+  // 3. [DELETE] 삭제 트리거
+  const handleDelete = async (id: string) => {
+    await fetch(`/api/prompts/${id}`, { method: "DELETE" });
+    fetchPrompts();
+  };
+
+  const handleEditClick = (p: Prompt) => {
+    setEditingId(p.id);
+    setTitle(p.title);
+    setContent(p.content);
+  };
   return (
     <div className="min-h-screen bg-slate-50 p-8 font-sans">
       <div className="max-w-4xl mx-auto space-y-8">
@@ -48,27 +85,27 @@ function page() {
                 type="submit"
                 className="flex-1 bg-slate-900 text-white font-bold py-3 rounded-lg cursor-pointer"
               >
-                {/* {editingId ? "데이터 업데이트" : "프롬프트 저장"} */}
+                {editingId ? "데이터 업데이트" : "프롬프트 저장"}
               </button>
-              {/* {editingId && (
+              {editingId && (
                 <button
                   type="button"
                   onClick={() => {
-                    // setEditingId(null);
-                    // setTitle("");
-                    // setContent("");
+                    setEditingId(null);
+                    setTitle("");
+                    setContent("");
                   }}
                   className="px-6 bg-slate-200 text-slate-700 font-bold rounded-lg cursor-pointer"
                 >
                   취소
                 </button>
-              )} */}
+              )}
             </div>
           </div>
         </form>
 
         <div className="space-y-4">
-          {prompts.map((p) => (
+          {prompts?.map((p) => (
             <div
               key={p.id}
               className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between gap-4"
@@ -78,7 +115,7 @@ function page() {
                   {p.title}
                 </h3>
                 <p className="text-slate-600 mb-3 whitespace-pre-wrap">
-                  {p.contents}
+                  {p.content}
                 </p>
                 <span className="text-xs text-slate-400 font-mono bg-slate-100 px-2 py-1 rounded">
                   최근 갱신: {new Date(p.updatedAt).toLocaleString()}
@@ -86,7 +123,7 @@ function page() {
               </div>
               <div className="flex sm:flex-col gap-2 justify-center">
                 <button
-                  onClick={() => handleEditClick(p.id)}
+                  onClick={() => handleEditClick(p)}
                   className="px-5 py-2 bg-blue-50 text-blue-600 font-bold rounded-lg cursor-pointer"
                 >
                   수정

@@ -1,36 +1,27 @@
-import { promptData } from "@/lib/db";
+import { db, Prompt } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
-  return NextResponse.json(
-    {
-      success: true,
-      data: promptData,
-    },
-    { status: 200 },
-  );
+  return NextResponse.json(db.prompts);
 }
 
 export async function POST(request: NextRequest) {
-  const payload = await request.json();
-  const { title, contents } = payload;
-  if (!title || !contents) {
+  const body = await request.json();
+
+  if (!body.title || !body.content) {
     return NextResponse.json(
-      { error: "필수값이 누락 되었습니다." },
+      { error: "데이터가 누락 되었습니다" },
       { status: 400 },
     );
   }
 
-  promptData.push({
-    id: promptData.length + 1,
-    ...payload,
-    updatedAt: new Date().toLocaleString(),
-  });
+  const newPrompt: Prompt = {
+    id: Date.now().toString(),
+    title: body.title,
+    content: body.content,
+    updatedAt: new Date().toISOString(),
+  };
+  db.prompts.unshift(newPrompt);
 
-  return NextResponse.json(
-    {
-      success: true,
-    },
-    { status: 201 },
-  );
+  return NextResponse.json(newPrompt, { status: 20 });
 }
