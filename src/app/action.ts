@@ -1,0 +1,32 @@
+"use server";
+
+// 1. 데이터 규격화 (인터페이스)
+interface NewProductData {
+  title: string;
+  price: number;
+}
+
+/**
+ * [서버 액션 함수]
+ * 프론트엔드 폼에서 직접 호출될 순수 백엔드 비즈니스 로직입니다.
+ */
+export async function createProductAction(formData: FormData) {
+  // 1단계: 웹 표준 FormData 객체에서 데이터 안전 추출
+  const title = formData.get("title") as string;
+  const price = Number(formData.get("price"));
+
+  // 2단계: 1차 유효성 방어선 (Validation)
+  if (!title || price <= 0) {
+    // API 에러 응답 대신, 순수 자바스크립트 에러를 던집니다.
+    throw new Error("상품명과 올바른 가격을 입력해주세요.");
+  }
+
+  // 3단계: 가상의 DB 저장 로직 수행
+  console.log(`💾 [DB 저장 완료] 상품명: ${title}, 가격: ${price}원`);
+
+  // 4단계: 클라이언트로 반환할 결과 페이로드
+  //   return {
+  //     success: true,
+  //     message: "시스템에 상품이 성공적으로 등록되었습니다.",
+  //   };
+}
