@@ -28,6 +28,7 @@ export default function NewProductPage() {
             padding: "12px",
             border: "1px solid #ccc",
             borderRadius: "6px",
+            color: "black",
           }}
         />
 
