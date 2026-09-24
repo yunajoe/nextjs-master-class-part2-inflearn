@@ -40,3 +40,32 @@ export async function createDevice(formData: FormData) {
   }
   console.log(`💾 [DB 저장 완료] 디바이스명: ${name}, 가격: ${price}원`);
 }
+
+export async function createSecurity(
+  prevState: { count: number; success: boolean; message: string },
+  formdata: FormData,
+) {
+  const id = formdata.get("employee-id") as string;
+  const department = formdata.get("department") as string;
+  if (!id || !department) {
+    return {
+      count: prevState.count,
+      success: false,
+      message: "필수값이 누락이 되었습니다.",
+    };
+  }
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  if (id.length < 4) {
+    return {
+      count: prevState.count,
+      success: false,
+      message: "사원번호는 4자리 이상이어야 합니다.",
+    };
+  }
+
+  return {
+    count: prevState.count + 1,
+    success: true,
+    message: "발급 성공하였습니다.",
+  };
+}
