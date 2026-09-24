@@ -41,31 +41,49 @@ export async function createDevice(formData: FormData) {
   console.log(`💾 [DB 저장 완료] 디바이스명: ${name}, 가격: ${price}원`);
 }
 
-export async function createSecurity(
-  prevState: { count: number; success: boolean; message: string },
-  formdata: FormData,
+export interface ClearanceState {
+  success: boolean;
+  message: string;
+  attemptCount: number; // 클라이언트의 useState 없이 서버가 추적할 '시도 횟수'
+  clearanceCode?: string;
+}
+
+export async function issueClearanceAction(
+  prevState: ClearanceState,
+  formData: FormData,
 ) {
-  const id = formdata.get("employee-id") as string;
-  const department = formdata.get("department") as string;
-  if (!id || !department) {
+  const currentAttempt = prevState.attemptCount + 1;
+  console.log(`[보안 감시] 발급 시도: ${currentAttempt}회차`);
+
+  const empId = formData.get("empId") as string;
+  const department = formData.get("department") as string;
+
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  if (!empId || empId.length < 4) {
     return {
-      count: prevState.count,
       success: false,
-      message: "필수값이 누락이 되었습니다.",
-    };
-  }
-  await new Promise((resolve) => setTimeout(resolve, 3000));
-  if (id.length < 4) {
-    return {
-      count: prevState.count,
-      success: false,
-      message: "사원번호는 4자리 이상이어야 합니다.",
+      message: "사번은 최소 4자리 이상이어야 합니다.",
+      attemptCount: currentAttempt,
     };
   }
 
+  if (!department) {
+    return {
+      success: false,
+      message: "부서를 정확히 입력해 주십시오.",
+      attemptCount: currentAttempt,
+    };
+  }
+
+  const generatedCode = `SEC-${Math.floor(1000 + Math.random() * 9000)}X`;
+  console.log(
+    `💾 [DB 기록] ${department} 소속 ${empId} 사번 발급 완료: ${generatedCode}`,
+  );
   return {
-    count: prevState.count + 1,
     success: true,
-    message: "발급 성공하였습니다.",
+    message: `정상적으로 발급되었습니다.`,
+    attemptCount: currentAttempt,
+    clearanceCode: generatedCode,
   };
 }
