@@ -1,3 +1,4 @@
+"use client";
 import { makeProductAction } from "@/app/action";
 import { useActionState } from "react";
 

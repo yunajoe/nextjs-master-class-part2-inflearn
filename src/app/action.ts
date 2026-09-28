@@ -1,5 +1,9 @@
 "use server";
 
+import { db } from "@/lib/db";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
 /**
  * [서버 액션 함수]
  * 프론트엔드 폼에서 직접 호출될 순수 백엔드 비즈니스 로직입니다.
@@ -27,7 +31,6 @@ export async function createProductAction(formData: FormData) {
 export async function createDevice(formData: FormData) {
   const name = formData.get("name") as string;
   const price = Number(formData.get("price")) as number;
-  console.log("name ===>", name, "price ===>", price);
   if (!name || !price || price <= 0) {
     // API 에러 응답 대신, 순수 자바스크립트 에러를 던집니다.
     throw new Error("상품명과 올바른 가격을 입력해주세요.");
@@ -121,4 +124,45 @@ export async function makeProductAction(
     message: `성공적으로 등록되었습니다: ${title}`,
     attemptCount: currentAttempt,
   };
+}
+
+interface MentoringFormState {
+  success: boolean;
+  message: string;
+  attemptCount: number;
+}
+
+// useActionState에 연결될 서버 함수는 반드시 첫 번째 인자로 prevState를 받습니다.
+export async function createMentoring(
+  pervState: MentoringFormState,
+  formState: FormData,
+): Promise<MentoringFormState> {
+  const currentCount = pervState.attemptCount + 1;
+  const name = formState.get("name") as string;
+  const subject = formState.get("subject") as string;
+  if (!name || !subject) {
+    return {
+      success: false,
+      message: "필수 입력값이 누락되었습니다.",
+      attemptCount: currentCount,
+    };
+  }
+
+  // 3초 지연
+  new Promise((resolve) => setTimeout(resolve, 3000));
+
+  db.mentoringList.unshift({
+    id: Date.now().toString(),
+    name,
+    subject,
+    appliedAt: new Date().toISOString(),
+  });
+  console.log(`💾 [DB 저장 완료] ${name} 학생의 멘토링 신청 접수`);
+
+  // 빌드 시점에 굳어져 버린 '/korapaduck' 경로의 정적 HTML 스냅샷을
+  // 당장 쓰레기통에 처넣으라고 프레임워크에게 호통을 칩니다.
+  revalidatePath("/korapaduck");
+  // 내부적으로 NEXT_REDIRECT 에러를 발생시켜 브라우저를 강제 이동시킵니다.
+  // 주의: 이 함수 아래에 작성된 코드는 에러 발생으로 인해 절대 실행되지 않습니다.
+  redirect("/korapaduck");
 }
