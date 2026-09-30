@@ -166,3 +166,25 @@ export async function createMentoring(
   // 주의: 이 함수 아래에 작성된 코드는 에러 발생으로 인해 절대 실행되지 않습니다.
   redirect("/korapaduck");
 }
+
+export async function toggleProductLikeAction(
+  productId: string,
+  newLikeStatus: boolean,
+) {
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  if (Math.random() < 0) {
+    throw new Error("서버 통신 중 알 수 없는 에러가 발생했습니다.");
+  }
+
+  // [단계 3] DB 업데이트 로직 (성공을 가정)
+  // 실제 환경이라면 prisma.product.update() 등의 ORM 코드가 들어갈 자리입니다.
+  console.log(
+    `💾 [DB 업데이트 완료] 상품 ${productId}의 좋아요 상태: ${newLikeStatus}`,
+  );
+  // [단계 4] 데이터 동기화:
+  // 데이터가 변경되었으므로 Next.js 라우터 캐시를 박살 내고 새로운 상태로 화면을 새로고침합니다.
+  revalidatePath(`/products/${productId}`);
+
+  return newLikeStatus;
+}
