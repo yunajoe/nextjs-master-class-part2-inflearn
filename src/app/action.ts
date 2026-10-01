@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 /**
@@ -187,4 +188,22 @@ export async function toggleProductLikeAction(
   revalidatePath(`/products/${productId}`);
 
   return newLikeStatus;
+}
+
+export async function toggleThemeAction() {
+  const cookieStore = await cookies();
+  const currentTheme = cookieStore.get("theme")?.value || "light";
+  const newTheme = currentTheme === "light" ? "dark" : "light";
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+
+  cookieStore.set("theme", newTheme, {
+    httpOnly: true, // XSS 공격 원천 차단
+    secure: process.env.NODE_ENV === "production", // 실서버 HTTPS 강제
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365, // 1년 유지
+  });
+  console.log(
+    `🌙 [테마 변경] 서버가 사용자의 테마를 '${newTheme}'로 기억합니다.`,
+  );
+  revalidatePath("/", "layout");
 }
