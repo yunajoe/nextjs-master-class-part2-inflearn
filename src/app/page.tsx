@@ -1,6 +1,11 @@
+import SettingButton from "@/app/components/setting-button";
+import ThemeToggleButton from "@/app/components/theme-toggle-button";
+import { cookies } from "next/headers";
 import Link from "next/link";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const cookiesStore = await cookies();
+  const mode = cookiesStore.get("settings")?.value || "free";
   return (
     <div className="p-10">
       <h1 className="text-3xl font-bold mb-2">통합 데이터 파이프라인</h1>
@@ -14,6 +19,10 @@ export default function HomePage() {
       >
         신규 상품 등록 통제소 진입
       </Link>
+      <div className="space-y-6 mt-4">
+        <ThemeToggleButton />
+        <SettingButton currentMode={mode} />
+      </div>
     </div>
   );
 }

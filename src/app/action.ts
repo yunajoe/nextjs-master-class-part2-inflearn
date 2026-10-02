@@ -207,3 +207,19 @@ export async function toggleThemeAction() {
   );
   revalidatePath("/", "layout");
 }
+
+export async function changeSettingAction() {
+  const cookiesStore = await cookies();
+  const concentrateMode = cookiesStore.get("settings")?.value || "free";
+  const newMode = concentrateMode === "concentrate" ? "free" : "concentrate";
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  cookiesStore.set("settings", newMode, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // production을 일때는 https
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365, // 1년 유지
+  });
+
+  console.log(` [설정 변경] 서버가 사용자의 설정을 '${newMode}'로 기억합니다.`);
+  revalidatePath("/", "layout");
+}
