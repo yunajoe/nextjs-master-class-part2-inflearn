@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -222,4 +223,72 @@ export async function changeSettingAction() {
 
   console.log(` [설정 변경] 서버가 사용자의 설정을 '${newMode}'로 기억합니다.`);
   revalidatePath("/", "layout");
+}
+
+/**
+ * [방어적 서버 액션]
+ * redirect가 던지는 NEXT_REDIRECT 에러를 catch 블록이 삼키지 않도록 설계되었습니다.
+ */
+
+/**
+ *
+ * @param formData
+ */
+
+/**
+ * redirect 처리 
+ * Server Action
+    │
+    ├─ redirect("/posts")
+    │
+    ├─ NEXT_REDIRECT throw
+    │
+    ├─ catch가 잡음
+    │
+    ├─ throw error
+    │
+    ▼
+Next.js Server Action 처리 계층
+    │
+    ├─ "아, 이건 일반적인 에러가 아니구나"
+    │
+    ├─ redirect 신호 확인
+    │
+ */
+export async function safeCreatePostAction(formData: FormData) {
+  try {
+    const title = formData.get("title");
+    if (!title) throw new Error("제목 필수");
+    console.log(`💾 [DB 저장 완료] 제목: ${title}`);
+    const cookieStore = await cookies();
+    cookieStore.set("author_badge", "true", { httpOnly: true, secure: true });
+
+    redirect("/posts"); //  Error: NEXT_REDIRECT
+  } catch (error) {
+    // 방법1
+    // if (error instanceof Error && error.message === 'NEXT_REDIRECT') {
+    //   throw error
+    // }
+    // 방법2
+    if (isRedirectError(error)) {
+      throw error;
+    }
+    console.error("서버 처리 중 오류:", error);
+  }
+}
+export async function safeCreatePostAction2(formData: FormData) {
+  let isSuccess = false;
+  try {
+    const title = formData.get("title");
+    if (!title) throw new Error("제목 필수");
+    console.log(`💾 [DB 저장 완료] 제목: ${title}`);
+    const cookieStore = await cookies();
+    cookieStore.set("author_badge", "true", { httpOnly: true, secure: true });
+    isSuccess = true;
+  } catch (error) {
+    console.error("서버 처리 중 오류:", error);
+  }
+  if (isSuccess) {
+    redirect("/posts");
+  }
 }
