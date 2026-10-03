@@ -713,3 +713,168 @@ PRG
 → POST 이후 Redirect를 거쳐 GET으로 전환하여
   새로고침에 의한 POST 재전송 문제를 방지하는 패턴입니다.
 ```
+
+### `redirect()`와 `NEXT_REDIRECT` 정리
+
+#### 1. `redirect()`는 실제로 이동시키는 함수가 아니다
+
+```ts
+redirect("/posts");
+```
+
+를 호출하면 Next.js는 내부적으로 **`NEXT_REDIRECT`라는 특별한 에러를 throw**한다.
+
+```text
+redirect("/posts")
+      ↓
+NEXT_REDIRECT 생성
+      ↓
+throw
+```
+
+즉 `redirect()`는 일반적인 `return`이 아니라 **예외 흐름을 이용해 Next.js에게 redirect를 요청하는 것**이다.
+
+---
+
+#### 2. `try/catch` 안에서는 `catch`가 `NEXT_REDIRECT`도 잡는다
+
+```ts
+try {
+  redirect("/posts");
+} catch (error) {
+  console.log(error);
+}
+```
+
+흐름은:
+
+```text
+redirect("/posts")
+      ↓
+NEXT_REDIRECT 발생
+      ↓
+catch가 잡음
+```
+
+따라서 그냥 처리해버리면:
+
+```ts
+catch (error) {
+  console.error(error)
+}
+```
+
+**redirect 신호가 사라져서 redirect가 정상적으로 처리되지 않는다.**
+
+---
+
+#### 3. 그래서 `isRedirectError()`로 구분한다
+
+```ts
+try {
+  redirect("/posts");
+} catch (error) {
+  if (isRedirectError(error)) {
+    throw error;
+  }
+
+  console.error("서버 처리 중 오류:", error);
+}
+```
+
+흐름은:
+
+```text
+redirect("/posts")
+      ↓
+NEXT_REDIRECT 발생
+      ↓
+catch가 잡음
+      ↓
+isRedirectError(error) === true
+      ↓
+throw error
+      ↓
+Next.js가 전달받음
+      ↓
+redirect 처리
+      ↓
+/posts 이동
+```
+
+여기서 중요한 점:
+
+> **`throw`가 redirect를 다시 실행하는 것이 아니다.**
+
+처음 `redirect("/posts")`가 만든 **`NEXT_REDIRECT` 신호를 catch에서 먹지 않고 Next.js까지 다시 전달하는 것**이다.
+
+---
+
+### 4. 일반 에러와의 차이
+
+일반 에러:
+
+```ts
+throw new Error("DB 오류");
+```
+
+```text
+Error
+ ↓
+catch
+ ↓
+처리하거나 throw
+ ↓
+상위 호출자
+```
+
+Redirect:
+
+```ts
+redirect("/posts");
+```
+
+```text
+NEXT_REDIRECT
+ ↓
+catch
+ ↓
+throw
+ ↓
+Next.js
+ ↓
+redirect 처리
+```
+
+`NEXT_REDIRECT`는 **일반적인 비즈니스 에러라기보다 Next.js의 제어 신호**라고 이해하면 된다.
+
+---
+
+### 5. 가장 깔끔한 방법
+
+실제 코드에서는 `redirect()`를 `try/catch` 밖에 두는 게 가장 단순하다.
+
+```ts
+try {
+  // DB 저장
+  // cookie 설정
+} catch (error) {
+  console.error(error);
+}
+
+redirect("/posts");
+```
+
+그러면:
+
+```text
+일반 에러 → catch에서 처리
+
+redirect → catch를 거치지 않음
+          ↓
+        Next.js가 처리
+```
+
+### 핵심 한 문장
+
+> **`redirect()`는 `NEXT_REDIRECT`를 throw하고, `try/catch` 안에 있다면 catch가 이를 잡을 수 있으므로 `isRedirectError()`로 확인한 뒤 다시 `throw`해서 Next.js가 redirect 신호를 처리하도록 해야 한다.**
