@@ -292,3 +292,24 @@ export async function safeCreatePostAction2(formData: FormData) {
     redirect("/posts");
   }
 }
+
+export async function adminLogin(formData: FormData) {
+  let isSuccess = false;
+  try {
+    const code = formData.get("code");
+    if (code !== "2026") {
+      throw new Error("[System Error] 인가 코드 불일치!");
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    isSuccess = true;
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error; // front에서 처리할 수 있겠끔..
+    }
+    console.error("서버 처리 중 오류", error);
+  }
+
+  if (isSuccess) {
+    redirect("/admin/dashboard");
+  }
+}
