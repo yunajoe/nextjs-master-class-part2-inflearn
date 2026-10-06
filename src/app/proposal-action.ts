@@ -8,7 +8,13 @@ export async function proposalDarkModeActions() {
     const cookieStore = await cookies();
     const currentMode = cookieStore.get("mode")?.value ?? "light";
     const changeMode = currentMode === "dark" ? "light" : "dark";
-    cookieStore.set("mode", changeMode);
+    cookieStore.set({
+      httpOnly: true,
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      name: "mode",
+      value: changeMode,
+    });
   } catch (error) {
     console.error("테마 변경 에러가 났습니다.");
   }
@@ -26,13 +32,14 @@ export async function proposalActions(
   try {
     const title = formData.get("title") as string;
     if (!title || title?.trim().length < 5) {
-      throw new Error("5자 이상 입력하세요!");
+      throw new Error("5자 이상 입력해주세요.");
     }
     await new Promise((resolve) => setTimeout(resolve, 3000));
     // db 작동
     const newData = {
       id: ProposalData.length + 1,
       title,
+      likeCount: 0,
     };
     ProposalData.push(newData);
     redirect("/proposal");

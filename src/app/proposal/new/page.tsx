@@ -21,8 +21,6 @@ const initialState = {
 };
 function Page() {
   const [state, dispatch] = useActionState(proposalActions, initialState);
-
-  console.log("State", state);
   return (
     <form
       action={dispatch}
