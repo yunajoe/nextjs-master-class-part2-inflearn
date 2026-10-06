@@ -1,3 +1,4 @@
+import ProposalLikeButton from "@/app/components/proposal-like-button";
 import { ProposalData } from "@/lib/proposal-db";
 import Link from "next/link";
 
@@ -15,8 +16,7 @@ async function page() {
         {ProposalData.map((item) => (
           <div key={item.id} className="p-2 flex gap-4 items-center">
             <span className="text-3xl">{item.title}</span>
-            <span className="text-xl">좋아요 갯수: {item.likeCount}개</span>
-            <button>[투표하기 버튼]</button>
+            <ProposalLikeButton itemId={item.id} likeCount={item.likeCount} />
           </div>
         ))}
       </div>

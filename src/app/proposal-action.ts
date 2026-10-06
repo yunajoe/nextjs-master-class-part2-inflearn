@@ -52,3 +52,31 @@ export async function proposalActions(
     };
   }
 }
+
+export async function proposalLikeActions(id: number) {
+  try {
+    const itemIdx = ProposalData.findIndex((item) => item.id === id);
+    if (itemIdx === -1) {
+      throw new Error("아이템을 찾을 수 없습니다.");
+    }
+    const item = ProposalData.find((item) => item.id === id);
+    if (!item) {
+      throw new Error("아이템을 찾을 수 없습니다.");
+    }
+
+    const failurePercent = Math.random() <= 0.5;
+    if (failurePercent) {
+      throw new Error("좋아요 상태를 바꾸는데 실패하였습니다.");
+    }
+    const updatedItem = {
+      ...item,
+      likeCount: item?.likeCount + 1,
+    };
+    ProposalData.splice(itemIdx, 1, updatedItem);
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "서버에러",
+    };
+  }
+}
