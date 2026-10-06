@@ -313,3 +313,51 @@ export async function adminLogin(formData: FormData) {
     redirect("/admin/dashboard");
   }
 }
+
+export interface AuthState {
+  success: boolean;
+  message: string;
+}
+
+export async function authenticateAdminAction(
+  prevState: AuthState,
+  formData: FormData,
+) {
+  const code = formData.get("code") as string;
+  let isSuccess = false;
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    if (!code) {
+      throw new Error("인가 코드가 비어있습니다.");
+    }
+    if (code !== "2026") {
+      throw new Error("유효하지 않은 인가 코드입니다. 보안팀에 기록됩니다.");
+    }
+
+    console.log(`🔐 [보안 통과] 관리자 인가 성공`);
+    const cookieStore = await cookies();
+    cookieStore.set("admin_session", "true", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    isSuccess = true;
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+    console.error("서버 인가 처리 중 에러:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "서버 오류",
+    };
+  }
+  if (isSuccess) {
+    redirect("/admin/dashboard");
+  }
+
+  return { success: true, message: "성공!" };
+}
