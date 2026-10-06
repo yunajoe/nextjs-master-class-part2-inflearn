@@ -40,11 +40,7 @@ export default async function RootLayout({
             ARCHITECT CONTROL CENTER
           </h2>
         </header>
-        <main
-          className={`p-10 flex flex-col items-center justify-center min-h-[80vh] ${textScale}`}
-        >
-          {children}
-        </main>
+        <main className={`${textScale}`}>{children}</main>
       </body>
     </html>
   );
