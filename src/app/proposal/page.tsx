@@ -2,7 +2,7 @@ import ProposalLikeButton from "@/app/components/proposal-like-button";
 import { ProposalData } from "@/lib/proposal-db";
 import Link from "next/link";
 
-async function page() {
+function page() {
   return (
     <div className="flex flex-col items-center gap-4">
       <h1 className="text-3xl">환영합니다! 실시간 제안서 피드</h1>

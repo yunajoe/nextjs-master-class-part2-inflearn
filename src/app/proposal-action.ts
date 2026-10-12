@@ -1,5 +1,6 @@
 "use server";
 import { ProposalData } from "@/lib/proposal-db";
+import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -64,7 +65,7 @@ export async function proposalLikeActions(id: number) {
       throw new Error("아이템을 찾을 수 없습니다.");
     }
 
-    const failurePercent = Math.random() <= 0.5;
+    const failurePercent = Math.random() <= 0.1;
     if (failurePercent) {
       throw new Error("좋아요 상태를 바꾸는데 실패하였습니다.");
     }
@@ -73,6 +74,7 @@ export async function proposalLikeActions(id: number) {
       likeCount: item?.likeCount + 1,
     };
     ProposalData.splice(itemIdx, 1, updatedItem);
+    revalidatePath("/");
   } catch (error) {
     return {
       success: false,

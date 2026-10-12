@@ -3,10 +3,6 @@
 import { proposalLikeActions } from "@/app/proposal-action";
 import { useOptimistic, useTransition } from "react";
 
-// useOptimistic(
-//   현재_실제_상태,
-//   상태를_낙관적으로_변경하는_함수,
-// )
 function ProposalLikeButton({
   itemId,
   likeCount,
