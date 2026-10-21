@@ -1,5 +1,5 @@
 "use server";
-import { ProposalData } from "@/lib/proposal-db";
+import { ProposalData, db } from "@/lib/proposal-db";
 import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { cookies } from "next/headers";
@@ -81,4 +81,38 @@ export async function proposalLikeActions(id: number) {
       message: error instanceof Error ? error.message : "서버에러",
     };
   }
+}
+
+export interface FormState {
+  success: boolean;
+  message: string;
+}
+
+export async function createProposalAction(
+  prevState: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  let isSuccess = false;
+  const title = formData.get("title") as string;
+
+  try {
+    if (!title || title.length < 5) {
+      throw new Error("제목은 5글자 이상이어야 합니다.");
+    }
+    db.proposals.unshift({ id: `Proposal-${Date.now()}`, title, votes: 0 });
+    isSuccess = true;
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "서버 오류",
+    };
+  }
+
+  if (isSuccess) {
+    revalidatePath("/");
+    redirect("/");
+  }
+
+  return { success: true, message: "" };
 }
