@@ -1,4 +1,5 @@
 import HeavyProductDescription from "@/components/heavy-product-description";
+import ProductReview from "@/components/product-review";
 import RealTimeCart from "@/components/real-time-cart";
 import { Suspense } from "react";
 
@@ -26,6 +27,15 @@ function page({ params }: { params: Promise<{ id: string }> }) {
         }
       >
         <HeavyProductDescription paramsPromise={params} />
+      </Suspense>
+      <Suspense
+        fallback={
+          <div className="p-6 bg-red-50 border border-red-100 rounded-xl text-red-500 font-bold animate-pulse">
+            ⏳ 리뷰 데이터를 불러오는 중입니다...
+          </div>
+        }
+      >
+        <ProductReview paramsPromise={params} />
       </Suspense>
     </div>
   );
