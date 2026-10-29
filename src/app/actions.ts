@@ -1,7 +1,6 @@
 "use server";
 
-import { cacheTag, revalidatePath, revalidateTag, updateTag } from "next/cache";
-
+import { revalidatePath, revalidateTag, updateTag } from "next/cache";
 
 let mockReviews = [
   {
@@ -39,9 +38,6 @@ let mockReviews2 = [
   },
 ];
 
-let db = [{
-  reviews: 
-}];
 export async function getReviews(productId: string) {
   await new Promise((res) => setTimeout(res, 500));
   return mockReviews.filter((r) => r.productId === productId);
@@ -76,19 +72,4 @@ export async function deleteReviewInstantAction(reviewId: string) {
   mockReviews2 = mockReviews2.filter((r) => r.id != reviewId);
   // 경로가 어디든 상관없이 'global-reviews' 태그를 가진 모든 캐시를 지금 당장 파괴합니다!
   updateTag("global-reviews");
-}
-
-export async function getReview(id: string) {
-  "use cache";
-
-  cacheTag(`review-${id}`, `product-123-reviews`);
-
-  const res = await fetch(`https://api.example.com/reviews/${id}`);
-  return res.json();
-}
-
-export async function deleteReviewAction2(reviewId: string) {
-
-  await db.review.delete({ where: { id: reviewId } });
-  updateTag(`review-${reviewId}`);
 }
