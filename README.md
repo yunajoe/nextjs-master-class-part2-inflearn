@@ -200,3 +200,149 @@ Server Action에서 DB의 리뷰를 수정하거나 삭제합니다.
 - 사용자에게 수정 결과를 즉시 보여줘야 함 → `updateTag`
 - 오래된 캐시를 제공하면서 백그라운드 재검증 가능 → `revalidateTag(tag, 'max')`
 - 특정 경로를 재검증해야 함 → `revalidatePath`
+
+아래처럼 기존 노트의 구성과 설명 스타일을 유지하면서, 방금 질문한 `cacheTag()`가 필수인 경우와 필요하지 않은 경우를 추가하면 돼.
+
+# Next.js 캐시 무효화: `cacheTag`와 재검증 API의 관계
+
+## 1. 핵심 개념: 캐시 무효화 기준이 다르다
+
+Next.js에서 캐시를 무효화하는 방법은 크게 경로 기준과 태그 기준으로 나눌 수 있습니다.
+
+- 경로 기준: `revalidatePath()`
+  - 특정 URL 경로를 기준으로 재검증합니다.
+  - `cacheTag()`를 지정할 필요가 없습니다.
+- 태그 기준: `revalidateTag()`, `updateTag()`
+  - 특정 태그가 연결된 캐시를 대상으로 작업합니다.
+  - 태그 기반 캐시를 사용하려면 해당 캐시에 태그를 연결해야 합니다.
+
+핵심: `cacheTag()` 자체가 모든 캐싱에 필수인 것은 아닙니다. 태그 기준으로 캐시를 무효화할 때 필요한 설정입니다.
+
+## 2. `revalidatePath()` — 태그 없이 사용 가능
+
+특정 경로를 기준으로 캐시를 재검증할 때 사용합니다.
+
+```
+'use server'
+
+import { revalidatePath } from 'next/cache'
+
+export async function updateProduct() {
+  await db.product.update({
+    where: { id: 1 },
+    data: { price: 60000 }
+  })
+
+  revalidatePath('/products')
+}
+```
+
+- 기준: URL 경로
+- `cacheTag()` 필요 여부: 불필요
+- 사용 목적: 상품 수정 후 상품 목록 페이지를 재검증합니다.
+
+예를 들어 `/products` 페이지를 재검증하려는 경우, 캐시 조회 함수에 별도로 `cacheTag('products')`를 추가하지 않아도 됩니다.
+
+다만 같은 데이터가 여러 경로에서 사용된다면, 해당 경로들을 각각 재검증할지 태그를 공유해 관리할지 판단해야 합니다.
+
+## 3. `revalidateTag()` — 태그를 기준으로 재검증
+
+태그 기반으로 캐시를 관리하려면 먼저 캐시에 태그를 연결해야 합니다.
+
+```
+import { cacheTag } from 'next/cache'
+
+export async function getProducts() {
+  'use cache'
+
+  cacheTag('products')
+
+  return db.product.findMany()
+}
+```
+
+그다음 Server Action이나 Route Handler에서 태그를 재검증합니다.
+
+```
+'use server'
+
+import { revalidateTag } from 'next/cache'
+
+export async function updateProducts() {
+  await db.product.update({
+    where: { id: 1 },
+    data: { price: 60000 }
+  })
+
+  revalidateTag('products', 'max')
+}
+```
+
+- `cacheTag('products')`: 캐시 항목에 `products` 태그를 연결합니다.
+- `revalidateTag('products', 'max')`: 해당 태그가 연결된 캐시를 오래된 상태로 표시하고, 다음 요청에서 재검증할 수 있도록 합니다.
+- 오래된 캐시가 먼저 제공될 수 있으므로 수정 직후 항상 최신 데이터가 표시되는 것은 아닙니다.
+
+주의: 태그 이름만 같다고 자동으로 모든 캐시가 연결되는 것은 아닙니다. 무효화하려는 캐시 항목에 해당 태그를 실제로 지정해야 합니다.
+
+## 4. `updateTag()` — 태그를 기준으로 즉시 만료
+
+`updateTag()`도 태그를 기준으로 캐시를 관리하므로, 대상 캐시에 태그가 연결되어 있어야 합니다.
+
+```
+'use server'
+
+import { updateTag } from 'next/cache'
+
+export async function updateProduct() {
+  await db.product.update({
+    where: { id: 1 },
+    data: { price: 60000 }
+  })
+
+  updateTag('products')
+}
+```
+
+- 사용 위치: Server Action 내부
+- 기준: 태그
+- `cacheTag()` 필요 여부: 해당 캐시에 태그가 연결되어 있어야 함
+- 목적: 캐시를 즉시 만료해 다음 조회에서 오래된 캐시를 제공하지 않도록 합니다.
+
+대표 사례는 게시글 작성·수정, 리뷰 수정, 사용자 프로필 변경 등입니다.
+
+## 5. 세 가지 API 비교
+
+| 구분                   | `revalidatePath()`           | `revalidateTag(tag, 'max')`  | `updateTag()`                                  |
+| ---------------------- | ---------------------------- | ---------------------------- | ---------------------------------------------- |
+| 무효화 기준            | 경로                         | 태그                         | 태그                                           |
+| `cacheTag()` 필요 여부 | 불필요                       | 태그 연결 필요               | 태그 연결 필요                                 |
+| 주요 목적              | 특정 경로 재검증             | 유연한 캐시 재검증           | 즉시 캐시 만료                                 |
+| 오래된 캐시 제공       | 캐시 종류와 동작에 따라 다름 | 가능                         | 다음 조회에서 오래된 캐시를 제공하지 않도록 함 |
+| 사용 위치              | Server Action, Route Handler | Server Action, Route Handler | Server Action만                                |
+
+참고로 `cacheTag()`가 없어도 `fetch()`의 `next.tags` 옵션으로 태그를 지정할 수 있습니다. 중요한 것은 `cacheTag()`라는 함수 자체가 아니라 무효화하려는 캐시 항목에 해당 태그가 연결되어 있는지입니다.
+
+## 6. 실무에서 선택하는 기준
+
+특정 페이지를 갱신하고 싶다
+
+`revalidatePath('/products')`
+
+경로를 기준으로 재검증하며, 태그를 따로 지정할 필요가 없습니다.
+
+여러 페이지에서 공유하는 데이터를 재검증하고 싶다
+
+`cacheTag('products')` + `revalidateTag('products', 'max')`
+
+같은 태그가 연결된 여러 캐시 항목을 관리할 수 있습니다.
+
+사용자가 수정한 결과를 바로 다시 읽고 싶다
+
+`cacheTag('products')` + `updateTag('products')`
+
+Server Action에서 태그 기반 캐시를 즉시 만료합니다.
+
+- `revalidatePath()` → 경로 기준이므로 `cacheTag()` 불필요
+- `revalidateTag()` → 태그 기준이므로 대상 캐시에 태그 연결 필요
+- `updateTag()` → 태그 기준이므로 대상 캐시에 태그 연결 필요
+- `cacheTag()` → 캐시를 생성하는 API가 아니라, 캐시에 태그를 연결하는 API
