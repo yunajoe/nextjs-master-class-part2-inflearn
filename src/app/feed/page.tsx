@@ -1,9 +1,8 @@
-// src/app/feed/page.tsx
 import Link from "next/link";
 
 const photos = [
-  { id: "1", title: "아름다운 풍경", author: "Elena" },
-  { id: "2", title: "멋진 건축물", author: "Leo" },
+  { id: 1, title: "아름다운 풍경", author: "Elena" },
+  { id: 2, title: "멋진 건축물", author: "Leo" },
 ];
 
 export default function FeedPage() {
@@ -25,6 +24,12 @@ export default function FeedPage() {
               className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
             >
               사진 상세보기
+            </Link>
+            <Link
+              href={`/mentor/${photo.id}`}
+              className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+            >
+              멘토 상세보기
             </Link>
           </div>
         ))}
